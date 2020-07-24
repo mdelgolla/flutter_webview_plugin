@@ -24,7 +24,7 @@ import io.flutter.plugin.common.PluginRegistry;
 /**
  * FlutterWebviewPlugin
  */
-public class FlutterWebviewPlugin implements MethodCallHandler, PluginRegistry.ActivityResultListener {
+public class FlutterWebviewPlugin implements FlutterPlugin , MethodCallHandler, PluginRegistry.ActivityResultListener {
     private Activity activity;
     private WebviewManager webViewManager;
     private Context context;
@@ -34,10 +34,8 @@ public class FlutterWebviewPlugin implements MethodCallHandler, PluginRegistry.A
 
     public static void registerWith(PluginRegistry.Registrar registrar) {
         if (registrar.activity() != null) {
-            channel = new MethodChannel(registrar.messenger(), CHANNEL_NAME);
-            final FlutterWebviewPlugin instance = new FlutterWebviewPlugin(registrar.activity(), registrar.activeContext());
-            registrar.addActivityResultListener(instance);
-            channel.setMethodCallHandler(instance);
+
+             instance.onAttachedToEngine(registrar.context(), registrar.messenger());
         }
     }
 
@@ -45,6 +43,28 @@ public class FlutterWebviewPlugin implements MethodCallHandler, PluginRegistry.A
         this.activity = activity;
         this.context = context;
     }
+
+      @Override
+  public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+    // TODO: your plugin is now attached to a Flutter experience.
+  }
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        // TODO: your plugin is now attached to a Flutter experience.
+    }
+    private void onAttachedToEngine(Context applicationContext, BinaryMessenger messenger) {
+        this.applicationContext = applicationContext;
+        channel = new MethodChannel(registrar.messenger(), CHANNEL_NAME);
+        final FlutterWebviewPlugin instance = new FlutterWebviewPlugin(registrar.activity(), registrar.activeContext());
+        registrar.addActivityResultListener(instance);
+        channel.setMethodCallHandler(instance);
+    }
+
+
+    @Override
+  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    // TODO: your plugin is no longer attached to a Flutter experience.
+  }
 
     @Override
     public void onMethodCall(MethodCall call, MethodChannel.Result result) {
