@@ -2,9 +2,11 @@ package com.flutter_webview_plugin;
 
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
+import android.util.Log;
 import android.view.Display;
 import android.webkit.WebStorage;
 import android.widget.FrameLayout;
@@ -12,30 +14,42 @@ import android.webkit.CookieManager;
 import android.webkit.ValueCallback;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.PluginRegistry;
 
 /**
  * FlutterWebviewPlugin
  */
-public class FlutterWebviewPlugin implements FlutterPlugin , MethodCallHandler, PluginRegistry.ActivityResultListener {
+public class FlutterWebviewPlugin implements FlutterPlugin, MethodCallHandler, StreamHandler,PluginRegistry.ActivityResultListener {
     private Activity activity;
     private WebviewManager webViewManager;
     private Context context;
     static MethodChannel channel;
+    private EventChannel eventChannel;
+    private BroadcastReceiver webViewStateBroadcastReceiver;
     private static final String CHANNEL_NAME = "flutter_webview_plugin";
     private static final String JS_CHANNEL_NAMES_FIELD = "javascriptChannelNames";
 
     public static void registerWith(PluginRegistry.Registrar registrar) {
+        Log.d("onAttachedToEngine","registerWith");
         if (registrar.activity() != null) {
-
-             instance.onAttachedToEngine(registrar.context(), registrar.messenger());
+//            channel = new MethodChannel(registrar.messenger(), CHANNEL_NAME);
+            final FlutterWebviewPlugin instance = new FlutterWebviewPlugin(registrar.activity(), registrar.activeContext());
+//            registrar.addActivityResultListener(instance);
+//            channel.setMethodCallHandler(instance);
+            instance.onAttachedToEngine(registrar.context(), registrar.messenger());
         }
     }
 
@@ -44,22 +58,19 @@ public class FlutterWebviewPlugin implements FlutterPlugin , MethodCallHandler, 
         this.context = context;
     }
 
-      @Override
-  public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-    // TODO: your plugin is now attached to a Flutter experience.
-  }
+
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-        // TODO: your plugin is now attached to a Flutter experience.
+        onAttachedToEngine(binding.getApplicationContext(), binding.getBinaryMessenger());
     }
     private void onAttachedToEngine(Context applicationContext, BinaryMessenger messenger) {
-        this.applicationContext = applicationContext;
-        channel = new MethodChannel(registrar.messenger(), CHANNEL_NAME);
-        final FlutterWebviewPlugin instance = new FlutterWebviewPlugin(registrar.activity(), registrar.activeContext());
-        registrar.addActivityResultListener(instance);
-        channel.setMethodCallHandler(instance);
-    }
+        Log.d("onAttachedToEngine","onAttachedToEngine");
+        channel = new MethodChannel(messenger, CHANNEL_NAME);
 
+        eventChannel = new EventChannel(messenger, CHANNEL_NAME);
+        eventChannel.setStreamHandler(this);
+        channel.setMethodCallHandler(this);
+    }
 
     @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
@@ -343,5 +354,15 @@ public class FlutterWebviewPlugin implements FlutterPlugin , MethodCallHandler, 
             return webViewManager.resultHandler.handleResult(i, i1, intent);
         }
         return false;
+    }
+
+    @Override
+    public void onListen(Object arguments, EventChannel.EventSink events) {
+
+    }
+
+    @Override
+    public void onCancel(Object arguments) {
+
     }
 }
